@@ -36,15 +36,5 @@ This project uses a Convolutional Neural Network (CNN), based on MobileNetV2, tr
 
   If eyes are closed and a yawn is detected, the system considers this a sign of drowsiness.
 
-This approach allows early detection of fatigue symptoms from visual data and can be adapted to webcam input for real-time monitoring
-
 ---
 
-## Requirements
-
-Make sure you have **Python 3.7+** installed.
-
-Install the dependencies:
-
-```bash
-pip install opencv-python mediapipe pygame
