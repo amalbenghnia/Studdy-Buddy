@@ -1,0 +1,66 @@
+import cv2
+import numpy as np
+from tensorflow.keras.models import load_model
+
+model = load_model("drowsiness_model_v2.h5")
+
+classes = ['Closed', 'Open', 'no_yawn', 'yawn']
+
+cap = cv2.VideoCapture(0)
+fourcc = cv2.VideoWriter_fourcc(*'XVID')
+out = cv2.VideoWriter('drowsiness_output.avi', fourcc, 20.0, (640, 480))
+
+alert_counter = 0
+ALERT_THRESHOLD = 30
+
+while True:
+    ret, frame = cap.read()
+    if not ret:
+        break
+
+    img = cv2.resize(frame, (224, 224))
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    img_input = np.expand_dims(img, axis=0) / 255.0
+
+    pred = model.predict(img_input)
+    predicted_class = np.argmax(pred)
+    confidence = np.max(pred)
+    label = classes[predicted_class]
+
+    eye_message = ""
+    yawn_message = ""
+
+    if label == "Closed":
+        eye_message = "Eyes Closed - Wake up!"
+        alert_counter += 1
+    elif label == "Open":
+        eye_message = "Eyes Open"
+        alert_counter = 0
+    elif label == "yawn":
+        yawn_message = "Yawning - Be careful!"
+        alert_counter += 1
+    elif label == "no_yawn":
+        yawn_message = "No yawn detected"
+        alert_counter = 0
+
+    cv2.putText(frame, f"{label} ({confidence*100:.2f}%)", (10, 40),
+                cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+    cv2.putText(frame, eye_message, (10, 70),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
+    cv2.putText(frame, yawn_message, (10, 100),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 255), 2)
+
+    if alert_counter >= ALERT_THRESHOLD:
+        cv2.putText(frame, "ALERTE : Somnolence détectée !", (10, 130),
+                    cv2.FONT_HERSHEY_SIMPLEX, 1.2, (0, 0, 255), 3)
+
+    cv2.imshow("Yawn & Eye Detection", frame)
+    out.write(frame)
+
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
+
+cap.release()
+cv2.destroyAllWindows()
+out.write(frame)
+cv2.destroyAllWindows()
